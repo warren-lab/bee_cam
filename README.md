@@ -1,2 +1,3 @@
-# bee_cam
-Multi-sensor Raspberry Pi camera trap designed for imaging bees to study bee behavior and native bee populations.
+# cam_scripts
+
+# imaging scripts for bee_cam timelapse
