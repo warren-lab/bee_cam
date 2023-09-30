@@ -2,6 +2,12 @@ import csv
 from datetime import datetime
 import os
 
+"""
+Goal is to make a main sensor class and then 2 child classes for the individual sensors
+
+- So these sensors will have all of the 
+"""
+
 class SensorData:
     def __init__(self):
         # Initialize an empty dictionary to store sensor data
