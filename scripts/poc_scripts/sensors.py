@@ -172,6 +172,9 @@ class MultiSensor(Sensor):
     def append_to_csv(self):
         """
         Create and or append the sensor data to the csv file
+
+
+        CONTINUE TO WORK ON THIS -> FIX STRUCTURE AND DICT RESET FOR ALL SENSOR
         """
         with open(self.filename, 'w') as data_file:
             try:
