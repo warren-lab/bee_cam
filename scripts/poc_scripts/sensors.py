@@ -1,4 +1,3 @@
-import csv
 from datetime import datetime
 import os
 import time
@@ -8,7 +7,7 @@ import adafruit_si7021
 ## light sensor data
 import board
 import adafruit_tsl2591
-
+from csv import DictWriter
 
 """
 Goal is to make a main sensor class and then 2 child classes for the individual sensors
@@ -19,10 +18,9 @@ Goal is to make a main sensor class and then 2 child classes for the individual 
 class Sensor:
     # dictionary of sensor data intrinsict for each sensor type
     data_dict ={} 
-    # Generate a filename based on the current timestamp and store it as a class property
-    ### This could be placed in a different place...
-    start_time= datetime.now().strftime('%Y%m%d')
-    filename = f'sensor_data_{start_time}.csv'# all data is written to this CSV...
+
+    # Create library object using our Bus I2C port
+    i2c = board.I2C()  # uses board.SCL and board.SDA
     def __init__(self):
 
         ## name of sensor
@@ -50,17 +48,32 @@ class Sensor:
             self.data_dict[sensor_type].append(data)
             
         return data
-    #def write_csv(self,)
+    def display(self):
+        """
+        Display the sensor dictionary 
+        """
+        d = self.data_dict
+        print(d)
+    def reset_dict(self):
+        """
+        reset the dictionary
+        """
+        return
+    # def write_csv(self):
+    #     """
+    #     Write the saved sensor data to file
+
+    #     This can be used in the case where you want specific information fo
+    #     """
 
 
 # Temperature and Relative Humidity Sensor 
 class TempRHSensor(Sensor):
     def __init__(self):
         super().__init__()
-        # Create library object using our Bus I2C port
-        i2c = board.I2C()  # uses board.SCL and board.SDA
+
         # i2c = board.STEMMA_I2C()  # For using the built-in STEMMA QT connector on a microcontroller
-        self.sensor_device = adafruit_si7021.SI7021(i2c)
+        self.sensor_device = adafruit_si7021.SI7021(self.i2c)
         ## sensor types:
         self.sensor_types = ['temperature','relative_humidity']
     def temp_rh_data(self):
@@ -75,22 +88,21 @@ class TempRHSensor(Sensor):
         ## update the dictionary
 
         return data1,data2
-    
-    def display(self):
-        d = self.data_dict
-        print(d)
-
 #  Light Sensor
 class LightSensor(Sensor):
+    """
+    Need to enable error handling so that if the sensor is not connecting we can continue
+    with the remaining sensors and the imaging...
+    """
     def __init__(self):
         super().__init__()
         #self.number_of_reads = config['Light'].getint('number_of_reads')
         #self.read_dt = config['Light'].getfloat('read_dt')
-        self.device = adafruit_tsl2591.TSL2591(board.I2C())
-        self.device.gain = adafruit_tsl2591.GAIN_MED
-        self.device.integration_time = adafruit_tsl2591.INTEGRATIONTIME_200MS
+        self.sensor_device = adafruit_tsl2591.TSL2591(self.i2c)
+        self.sensor_device.gain = adafruit_tsl2591.GAIN_MED
+        self.sensor_device.integration_time = adafruit_tsl2591.INTEGRATIONTIME_200MS
         self.sensor_types = ['lux','visible','infrared','full_spectrum']
-    def temp_rh_data(self):
+    def light_data(self):
         """
         gets the temperature and adds it to the dictionary but also 
         returns the temperature 
@@ -103,18 +115,80 @@ class LightSensor(Sensor):
         data4 = self.add_data(self.sensor_types[3])
         ## update the dictionary
 
-        return data1,data2
+        return data1,data2,data3, data4
+
+
+
+class MultiSensor(Sensor):
+    """
+    Class that holds the various different sensors for acquiring data
+
+    This will reduce the amount of complexity in the control script.
+
+    It also allows for the saving of all sensor data to csv
+
     
-    def display(self):
-        d = self.data_dict
-        print(d)
-
-
-
-# class MultiSensor():
-#     def __init__(self):
-
+    NEED TO DETERMINE:
+    - periodic batching for backup of CSV
+    - do backup everytime we get sensor data
+    - or do a combo of both methods
     
+    NEED TO ADD:
+    - need more error handling
+    - need to integrate time component..
+    - need to also have realtime monitoring...
+
+
+    """
+    def __init__(self):
+        """
+        Initialize the different sensor classes
+        """
+        super().__init__()
+        self.__temp_rh = TempRHSensor()
+        self.__light = LightSensor()
+        # Generate a filename based on the current timestamp and store it as a class property
+        ### This could be placed in a different place...
+        start_time= datetime.now().strftime('%Y%m%d')
+        self.filename = f'sensor_data_{start_time}.csv'# all data is written to this CSV...
+        # Create the CSV initially here...
+        with open(self.filename, 'w') as new_csv:
+            pass
+        
+    def add_data(self):
+        """
+        Similar to the prior classes this method will
+        focus on adding the data to the sensor data dictionary
+
+        However, this method essentially just calls all of the sensor 
+        data acquisition methods.
+        """
+        d_t, d_rh = self.__temp_rh.temp_rh_data()
+        d_lux, d_v, d_ir, d_fs= self.__light.light_data()
+        print("Current Data")
+        self.__temp_rh.display()
+        #return d_t, d_rh, d_lux, d_v, d_ir, d_fs
+    
+    def append_to_csv(self):
+        """
+        Create and or append the sensor data to the csv file
+        """
+        with open(self.filename, 'w') as data_file:
+            try:
+                # Try to pass the dictionary into the csv 
+                csv_writer = DictWriter(data_file, fieldnames =self.data_dict.keys())
+                csv_writer.writerow(self.data_dict)
+                self.data_dict = {} # reset the data_dict...
+                print(self.data_dict)
+            ## FIGURE OUT MORE ON RAISING EXCEPTIONS AND STUFF...
+            except Exception as e:
+                print(f"An error occurred while appending to the CSV file: {e}")
+
+
+
+
+
+
 
 
 
@@ -156,15 +230,23 @@ if __name__ == "__main__":
     Testing Procedure for temperature sensor
     """
     print("Working")
-    temp_sensor = temp_rh()
+    
+    sensors = MultiSensor()
+    # Start timer
+    start_time = time.time()
 
     try:
+        curr_time = start_time
         while True:
             print("In Loop")
             time.sleep(2)
-            data = temp_sensor.temp_rh_data()
-            print(data)
+            sensors.add_data()
+            if (time.time()-curr_time) >= 30:
+                print("yo")
+                curr_time = time.time()
+                sensors.append_to_csv()
+
 
     except KeyboardInterrupt:
         print("Exiting")
-        temp_sensor.display()
+        sensors.display()
