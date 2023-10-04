@@ -8,7 +8,14 @@ Goal is to make a main sensor class and then 2 child classes for the individual 
 - So these sensors will have all of the 
 """
 
-class SensorData:
+class sensors:
+    def __init__(self):
+        ## dictionary of sensor data intrinsict for each sensor type
+        self.data_dict ={}
+
+
+
+class light(sensors):
     def __init__(self):
         # Initialize an empty dictionary to store sensor data
         self.data_dict = {}
