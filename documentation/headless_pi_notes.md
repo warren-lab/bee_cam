@@ -53,7 +53,15 @@
     startx
     ```
 
-
-
+For Working on the Pi on Desktop through Vscode:
+1. First initialize the sshfs to mount a remote file system to the local system.
+    ```
+    sshfs pi@[ip address]: ~/[directory]
+    ```
+    - This is a directory where you want to mount the pi and once we go to this directory all files on the pi will be present.
+2. After initializing and starting the sshfs then ssh into the pi in order to run the scripts on the pi through the terminal.
+    ```
+    ssh pi@[ip_address]
+    ```
 
 
