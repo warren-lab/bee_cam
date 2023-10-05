@@ -16,17 +16,18 @@ Goal is to make a main sensor class and then 2 child classes for the individual 
 - So these sensors will have all of the 
 """
 
-class sensors:
+class Sensor:
     # dictionary of sensor data intrinsict for each sensor type
     data_dict ={} 
+    # Generate a filename based on the current timestamp and store it as a class property
+    ### This could be placed in a different place...
+    start_time= datetime.now().strftime('%Y%m%d')
+    filename = f'sensor_data_{start_time}.csv'# all data is written to this CSV...
     def __init__(self):
 
         ## name of sensor
-        self.sensor_device = 'sensor'
+        self.sensor_device = None
 
-        # Generate a filename based on the current timestamp and store it as a class property
-        timestamp = datetime.now().strftime('%Y%m%d')
-        self.filename = f'sensor_data_{timestamp}.csv' # all data is written to this CSV...
     def get_data(self,sensor_type):
         """
         Depending on the child class sensor device get_data will be
@@ -53,7 +54,7 @@ class sensors:
 
 
 # Temperature and Relative Humidity Sensor 
-class temp_rh(sensors):
+class TempRHSensor(Sensor):
     def __init__(self):
         super().__init__()
         # Create library object using our Bus I2C port
@@ -80,7 +81,7 @@ class temp_rh(sensors):
         print(d)
 
 #  Light Sensor
-class lightsensor(sensors):
+class LightSensor(Sensor):
     def __init__(self):
         super().__init__()
         #self.number_of_reads = config['Light'].getint('number_of_reads')
@@ -110,7 +111,7 @@ class lightsensor(sensors):
 
 
 
-# class multisensors:
+# class MultiSensor():
 #     def __init__(self):
 
     
