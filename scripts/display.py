@@ -6,6 +6,9 @@ import socket
 import os
 
 class Display:
+    """
+    Display showcasing Pi information and status
+    """
     def __init__(self):
         self.width = 128
         self.height = 64

@@ -51,13 +51,54 @@ except:
     sys.exit()
 
 # set output dir
-path_images = "/home/pi/imaging/images/"
-date_folder = str(datetime.now().strftime("%Y-%m-%d"))
-time_path = os.path.join(path_images, date_folder)
-os.makedirs(time_path, exist_ok=True)
+path_images = "/home/pimport os
+import sys
+import logging
+from .config import Config
+from .display import Display
+from .temp import TempSensor
+from .light import LightSensor
+from .sensordata import SensorData
+from picamera2 import Picamera2
+from time import sleep
+from datetime import datetime
+import threading
 
-# go to working dir
-os.chdir(time_path)
+config = Config()
+
+name = config['general']['name']    
+size = (config['imaging'].getint('w'), config['imaging'].getint('h'))
+lens_position = config['imaging'].getfloat('lens_position')
+img_count = 0
+
+sensors = SensorData()
+light = LightSensor()
+temp = TempSensor()
+temp_data = {'temp': temp.temperature,
+            'humid': temp.humidity}
+light_data = light.data
+metadata = temp_data | light_data
+sensors.get_dict(metadata)
+print(sensors.data_dict)
+sensors.create_csv()
+disp = Display()
+disp.display_msg('Initializing', img_count)
+
+# Configure logging
+log_file = "/home/pi/bee_cam/log.txt"
+logging.basicConfig(filename=log_file, level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+logging.info("###################### NEW RUN ##################################")
+
+try:
+    camera = Picamera2()
+    cam_config = camera.create_still_configuration({'size': size})
+    camera.configure(cam_config)
+    camera.exposure_mode = 'sports'
+    camera.set_controls({"LensPosition": lens_position})
+    camera.start()
+    sleep(5)
+except:
 print('Imaging')
 logging.info("Imaging...")
 
