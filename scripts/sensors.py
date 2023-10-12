@@ -26,10 +26,13 @@ class Sensor:
 
     # Create library object using our Bus I2C port
     i2c = board.I2C()  # uses board.SCL and board.SDA
-    def __init__(self):
+    def __init__(self, device = None):
 
         ## name of sensor
-        self.sensor_device = None
+        self.sensor_device = device
+
+        
+
 
     def get_data(self,sensor_type):
         """
@@ -55,8 +58,9 @@ class Sensor:
         return data
     def display(self):
         """
-        Display the sensor dictionary 
+        Display the sensor dictionary
         """
+        print("Sensor Data")
         d = self.data_dict
         print(d)
     def reset_dict(self):
@@ -76,10 +80,9 @@ class Sensor:
 # Temperature and Relative Humidity Sensor 
 class TempRHSensor(Sensor):
     def __init__(self):
-        super().__init__()
+        super().__init__(adafruit_si7021.SI7021(self.i2c))
 
         # i2c = board.STEMMA_I2C()  # For using the built-in STEMMA QT connector on a microcontroller
-        self.sensor_device = adafruit_si7021.SI7021(self.i2c)
         ## sensor types:
         self.sensor_types = ['temperature','relative_humidity']
     def temp_rh_data(self):
@@ -101,10 +104,9 @@ class LightSensor(Sensor):
     with the remaining sensors and the imaging...
     """
     def __init__(self):
-        super().__init__()
+        super().__init__(adafruit_tsl2591.TSL2591(self.i2c))
         #self.number_of_reads = config['Light'].getint('number_of_reads')
         #self.read_dt = config['Light'].getfloat('read_dt')
-        self.sensor_device = adafruit_tsl2591.TSL2591(self.i2c)
         self.sensor_device.gain = adafruit_tsl2591.GAIN_MED
         self.sensor_device.integration_time = adafruit_tsl2591.INTEGRATIONTIME_200MS
         self.sensor_types = ['lux','visible','infrared','full_spectrum']
@@ -167,7 +169,7 @@ class MultiSensor(Sensor):
         data acquisition methods.
         """
         ## Add the image and time to the dictionary
-        print(date_time)
+        #print(date_time)
         self.data_dict['time'].append(date_time)
         self.data_dict["image_filename"].append(img_file)
         ## Add Temperature and Humidity
@@ -184,10 +186,6 @@ class MultiSensor(Sensor):
         """
         Create and or append the sensor data to the csv file
 
-
-        CONTINUE TO WORK ON MAKING SURE DICTIONARY IS RESETTING...
-
-
         ADD into the CSVfile the image name as well which is going to require a function input...
         """
         if not os.path.exists(self.filename):
@@ -199,7 +197,7 @@ class MultiSensor(Sensor):
             try:
                 # Try to pass the dictionary into the csv 
                 csv_writer = DictWriter(data_file, fieldnames =self.data_dict.keys())
-                print(self.data_dict.values())
+                #print(self.data_dict.values())
                 # first got the length of the list...
                 len_list = len(list(self.data_dict.values())[0])
                 # looping over each time instance:
@@ -228,7 +226,7 @@ if __name__ == "__main__":
     """
     print("Working")
     
-    sensors = MultiSensor()
+    sensors = MultiSensor(path_images="/home/pi/imaging/images/")
     # Start timer
     start_time = time.time()
 

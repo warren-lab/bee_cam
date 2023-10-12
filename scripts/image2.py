@@ -13,13 +13,14 @@ import time
 Image2 is the current version of the imaging script for writing the sensor data to csv
 
 
+Functionality:
+- Saves Sensor data to dictionary and after [30 seconds] appends to csv. 
+It is important to note that if you kill the script that any data that has been saved 
+into this dictionary will immediately be appended to the csv file.
+- The sensor and imaging timestamps are insync and this can be validated from the log file.
+- 
 
 TO DO:
-
-- Make sure that the sensor that is being acquired and written is actually from the point in time that the image is taking place...
-
-- Need to make sure that everything is in sync... Right now things look good but need to check this more...
-
 
 - Create a new folder or directory for the sensor data... touchbase to see what to do
 
@@ -46,6 +47,7 @@ time_path = os.path.join(path_images, date_folder)
 os.makedirs(time_path, exist_ok=True)
 
 # Initialize the sensors...
+## also initializes the csv file name timestamp
 sensors = MultiSensor(path_images)
 
 # Initialize the display
@@ -78,12 +80,24 @@ os.chdir(time_path)
 print('Imaging')
 logging.info("Imaging...")
 
-def capture_image():
-    time_current = datetime.now()
+time_current = datetime.now()
+def sensor_data():
+    # wait for event to be set
+    event.wait()
     time_current_split = str(time_current.strftime("%Y%m%d_%H%M%S"))
-    camera.capture_file(name + '_' + time_current_split + '.jpg')
     ## add data to sensor dictionary
     sensors.add_data(name,time_current_split )
+    print(f"Sensor Data Acquired: {time_current_split}")
+    #print("Image acquired: ", time_current_split)
+
+    # # Save sensor data to csv immediately:
+    # sensors.append_to_csv()
+def capture_image():
+    # wait for the event to be set...
+    event.wait()
+    time_current_split = str(time_current.strftime("%Y%m%d_%H%M%S"))
+    camera.capture_file(name + '_' + time_current_split + '.jpg')
+    print(("Image acquired: %s", time_current_split))
     logging.info("Image acquired: %s", time_current_split)
     #print("Image acquired: ", time_current_split)
 
@@ -97,12 +111,26 @@ while True:
     try:
         disp.display_msg('Imaging!', img_count)
 
-        # Start the camera capture in a separate thread
+        # Create the Event
+        event =  threading.Event()
+        # set the event
+        event.set()
+        # develop two threads, one for sensors and one for images
+        sensor_thread = threading.Thread(target = sensor_data)
         capture_thread = threading.Thread(target=capture_image)
+        ## get the current time
+        time_current = datetime.now()
+        time_current_split = str(time_current.strftime("%Y%m%d_%H%M%S"))
+        print(time_current_split)
+        # start the sensor thread and capture thread:
+        sensor_thread.start()
         capture_thread.start()
 
-        # Wait for 3 seconds or until the thread finishes
-        capture_thread.join(timeout=3)
+        # Main thread waits for the threads to finish
+        ## first waits for this longer thread to complete first (3 seconds)
+        capture_thread.join(timeout=3) 
+        ## then will check if the sensor_thread is still alive and wait if needed 
+        sensor_thread.join() 
 
         # If thread is still alive after 3 seconds, it's probably hung
         if capture_thread.is_alive():
@@ -111,11 +139,15 @@ while True:
         img_count += 1
         retry_count = 0
        
-        if (time.time()-curr_time) >= 60:
+        # if wanting a delay in saving sensor data:
+        if (time.time()-curr_time) >= 30:
             sensors.append_to_csv()
             curr_time = time.time()
         sleep(.7)
     except KeyboardInterrupt:
+        if len(list(sensors.data_dict.values())[0]) != 0: 
+            # if list is not empty then add data...
+            sensors.append_to_csv()
         disp.display_msg('Interrupted', img_count)
         logging.info("KeyboardInterrupt")
         sys.exit()
