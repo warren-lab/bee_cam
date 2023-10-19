@@ -20,7 +20,6 @@ into this dictionary will immediately be appended to the csv file and the last r
 - The sensor and imaging timestamps are in sync and this can be validated from the log file.
 
 TO DO:
-
 - Provide error handling for solar and voltage/power of pi...
     -  Purchase a device that will do this...
 
