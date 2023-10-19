@@ -22,7 +22,7 @@
     ```
     hostname -I
     ```
-
+    
 5. From your linux machine:
     ```
     ssh-keygen -R [hostname]
@@ -63,5 +63,11 @@ For Working on the Pi on Desktop through Vscode:
     ```
     ssh pi@[ip_address]
     ```
+
+Running the script for testing:
+- from outside of the directory containing the repo
+```
+python -m beecam.scripts.image2.py 
+```
 
 
