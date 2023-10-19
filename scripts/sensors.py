@@ -31,9 +31,6 @@ class Sensor:
         ## name of sensor
         self.sensor_device = device
 
-        
-
-
     def get_data(self,sensor_type):
         """
         Depending on the child class sensor device get_data will be
@@ -148,7 +145,7 @@ class MultiSensor(Sensor):
 
 
     """
-    def __init__(self,path_images):
+    def __init__(self,path_sensors):
         """
         Initialize the different sensor classes
         """
@@ -158,7 +155,7 @@ class MultiSensor(Sensor):
         # Generate a filename based on the current timestamp and store it as a class property
         ### This could be placed in a different place...
         start_time= datetime.now().strftime('%Y%m%d_%H%M%S')
-        self.filename = f'{path_images}sensor_data_{start_time}.csv'# all data is written to this CSV...
+        self.filename = f'{path_sensors}sensor_data_{start_time}.csv'# all data is written to this CSV...
 
     def add_data(self,img_file,date_time):
         """
@@ -226,7 +223,7 @@ if __name__ == "__main__":
     """
     print("Working")
     
-    sensors = MultiSensor(path_images="/home/pi/imaging/images/")
+    sensors = MultiSensor(path_sensors="/home/pi/data/")
     # Start timer
     start_time = time.time()
 
