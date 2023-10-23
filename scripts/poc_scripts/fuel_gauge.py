@@ -22,5 +22,6 @@ print(
 while True:
     print(f"Battery voltage: {max17.cell_voltage:.2f} Volts")
     print(f"Battery state  : {max17.cell_percent:.1f} %")
+    print(f"Charging Rate:{max17.charge_rate:.2f}")
     print("")
-    time.sleep(1)
+    time.sleep(30)
