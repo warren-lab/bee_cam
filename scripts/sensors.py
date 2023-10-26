@@ -121,6 +121,15 @@ class LightSensor(Sensor):
         ## update the dictionary
 
         return data1,data2,data3, data4
+# class Battery(Sensor):
+#     """
+#     Sensor class specific to the Adafruit MAX17048 Lipo Battery Fuel Gauge
+
+#     Current Issues:
+#      - Current Charge Estimate
+#      - Issue with calibration of the battery  
+
+#     """
 
 
 
@@ -152,6 +161,7 @@ class MultiSensor(Sensor):
         super().__init__()
         self.__temp_rh = TempRHSensor()
         self.__light = LightSensor()
+        # self.__battery = 
         # Generate a filename based on the current timestamp and store it as a class property
         ### This could be placed in a different place...
         start_time= datetime.now().strftime('%Y%m%d_%H%M%S')
