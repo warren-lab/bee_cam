@@ -20,8 +20,20 @@ into this dictionary will immediately be appended to the csv file and the last r
 - The sensor and imaging timestamps are in sync and this can be validated from the log file.
 
 TO DO:
+- Finalize Solar Testing and Verify with the voltage difference thing to make sure that our readings are good for the single cell
+- Then attempt to test with the multi cell 10050mah module...
 - Provide error handling for solar and voltage/power of pi...
     -  Purchase a device that will do this...
+
+- Need to implement the night time imaging threshold based on the light sensor
+- Battery data need to log this data and write...
+- Keep pi and witty pi on for long duration...
+- Determine RTC alternative...
+- add in the GPS Sensor Functionality
+
+
+
+
 
 """
 
