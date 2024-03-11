@@ -130,6 +130,32 @@ class LightSensor(Sensor):
 #      - Issue with calibration of the battery  
 
 #     """
+class GPS(Sensor):
+    """
+    Sensor class specific to the Adafruit Mini GPS PA1010D Module
+
+    Current Issues:
+     - Need to essentially enable the write of the RTC time from the GPS to the Pi System Time
+     - Afterwar
+
+    """
+
+
+class WittyPi(Sensor):
+    """
+    Sensor class specific to the UUGear WittyPi 4 Mini
+
+    Current Issues:
+        -  The current issue is that we are unable to get the correct RTC time on the pi when we want to sync
+        - The solution for this is to instead utilize the GPS RTC first to write to the system time and then write the sytstem time to the WittyPi. That way we have complete accuracy...
+            - we could use the other RTC but the wittypi has more robust functionality for startup and shutdown based on the datetime and ensuring the time accuracy is important
+        - Do some troubleshooting in order to check the differences in the system, RTC from GPS and the wittypi RTC
+
+    Upon initalizing this sensor when the board is booted the GPS Sensor RTC will be written to the WittyPi. This should be done by using a BashScript...
+    
+    """
+
+
 
 
 
