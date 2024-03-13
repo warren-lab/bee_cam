@@ -16,6 +16,12 @@ Goal is to make a main sensor class and then 2 child classes for the individual 
 - So these sensors will have all of the 
 """
 
+# Initialized some exceptions that will be utilized as well
+class DarkPeriod(Exception):
+    """Raised when the Lux value for 5 concurrent samples is below the threshold"""
+    pass 
+
+
 class Sensor:
     # dictionary of sensor data intrinsict for each sensor type
     data_dict ={} 
@@ -107,11 +113,22 @@ class LightSensor(Sensor):
         self.sensor_device.gain = adafruit_tsl2591.GAIN_MED
         self.sensor_device.integration_time = adafruit_tsl2591.INTEGRATIONTIME_200MS
         self.sensor_types = ['lux','visible','infrared','full_spectrum']
+
+        # set the light sensor lux threshold (https://www.engineeringtoolbox.com/light-level-rooms-d_708.html)
+        self._lux_thr = 10
+        self.counter = 0 # interal counter for this sensor for how many readings are below threshold (max 5)
+    
     def light_data(self):
         """
         gets the temperature and adds it to the dictionary but also 
         returns the temperature 
         """
+        # get light data
+        lux,viz,ir,full = self.sensor_types
+
+        # prior to adding the data to the dictionary need to verify that the lux in in range
+
+
         ## adds data to the dictionary
         ### also provides current data point
         data1 = self.add_data(self.sensor_types[0])
@@ -119,8 +136,17 @@ class LightSensor(Sensor):
         data3 = self.add_data(self.sensor_types[2])
         data4 = self.add_data(self.sensor_types[3])
         ## update the dictionary
-
         return data1,data2,data3, data4
+    def get_lux(self):
+        """
+        
+        check to see if the lux over several measurements is under the threshold
+        if the lux is under the threshold for 5 measurements (maybe have it be more or less?)
+        then will send signal to kill data collection process
+        """
+
+        return self.get_data(self.sensor_types[0])
+    
 # class Battery(Sensor):
 #     """
 #     Sensor class specific to the Adafruit MAX17048 Lipo Battery Fuel Gauge
@@ -139,7 +165,41 @@ class GPS(Sensor):
      - Afterwar
 
     """
+class RTC(Sensor):
+    """
+    Sensor class specific to the Adafruit DS3231 Precision RTC - STEMMA QT
 
+    This sensor will act as a back up RTC as the supercapacitor on the WittyPi 4 Mini will not 
+    maintain time while powered off for a long period. So, during transit of the sensor system this
+    RTC will be utilized in place of the WittyPi which will be disconnected from the power supply.
+
+    Upon set up of the sensor system in the field this sensor is the first one that should be used ensuring
+    the time on the device is calibrated.
+
+    https://learn.adafruit.com/adding-a-real-time-clock-to-raspberry-pi/set-rtc-time
+    - we needed to use this tutorial in order to get rid of the fake-hwclock functionality that the Raspberry Pi
+    has built in when ther eis no RTC... What this means is that we are then going to essentially override this 
+    and implement the DS3231 sensor in its place as a reliable RTC...
+
+        - NOTE -> Witty Pi also has RTC... so will need to detemine conflicts with that... and ensure that the wittyPi
+        gets calibrated by the system. 
+        - NOTE -> Witty Pi essentially needs to be same time as RTC/System because it will act as power managment and 
+        ensure the start up and shutdown times...
+
+    After setting the DS3231 to be the RTC for the Pi then we needed to anable the network time protocol
+    synchronization
+        - enable NTP sync
+        ```sudo timedatectl set-ntp true```
+        
+        - update system time
+        ```sudo systemctl restart systemd-timesyncd```
+
+        - finally check the current date
+        ```date```
+    
+    After performing all of these steps this sensor will not be integrated into 
+    the Sensor stack in the control script as it is already running in the background
+    """
 
 class WittyPi(Sensor):
     """
