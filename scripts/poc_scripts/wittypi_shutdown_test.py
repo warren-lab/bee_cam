@@ -2,6 +2,18 @@
 This script will attempt to shutdown the wittyPi by using our knowledge 
 of the i2c and the smbus register...
 
+As of 3/13/2024  this script is sucessfully in setting the shutdown time for the WittyPi.
+
+NEXT STEPS:
+- Setting Start Up Time:
+- Shutdown Via Light Sensor Reading Fully integrate!
+- Implement My own WittyPi4mini Package/Class
+- 
+
+
+
+OTHER INFO:
+
 smbus2 -> https://github.com/kplindegaard/smbus2
 
 Datasheets:
@@ -14,45 +26,22 @@ THE RTC:
 """
 from smbus2 import SMBus
 from datetime import datetime
+import time
 ## i2c Bus 1
 ## wittypi 4 mini is on
 #### device -> x08
 
-# Function to convert Decimal to BCD 
-def BCDConversion(n) :
+def int_to_bcd(value):
     """
-    Function from GeeksforGeeks
-    https://www.geeksforgeeks.org/convert-a-given-decimal-number-to-its-bcd-representation/
-
-    """ 
- 
-    # Base Case 
-    if (n == 0) : 
-        return "0000"
- 
-    # To store the reverse of n 
-    rev = 0
- 
-    # Reversing the digits 
-    while (n > 0) : 
-        rev = rev * 10 + (n % 10)
-        n = n // 10
-
-    # Iterate through all digits in rev 
-    num = ""
-    while (rev > 0) : 
- 
-        # Find Binary for each digit 
-        # using bitset 
-        b = str(rev % 10)
-         
-        # Print the Binary conversion 
-        # for current digit 
-        # print("{0:04b}".format(int(b, 16)), end = " ") 
-        num += "{0:04b}".format(int(b, 16))
-        # Divide rev by 10 for next digit 
-        rev = rev // 10
-    return num
+    Convert an integer to its BCD representation.
+    
+    Args:
+    - value: The integer value to convert (0-99).
+    
+    Returns:
+    - The BCD representation as an integer.
+    """
+    return ((value // 10) << 4) | (value % 10)
 def bcd_to_int(bcd):
     """
     Convert a BCD-encoded number to an integer. 
@@ -88,9 +77,16 @@ with SMBus(1) as bus:
     # ## Set Day of Week of Alarm2 -> 36, INT TO BCD
     for count, val in enumerate(range(32,37)):
         # print(val, shutdown_time_list[count],BCDConversion(shutdown_time_list[count]))
-        bus.write_byte_date(8,val,BCDConversion(shutdown_time_list[count]))
+        bus.write_byte_data(8,val,int_to_bcd(shutdown_time_list[count]))
+        time.sleep(5)
     if bcd_to_int(bus.read_byte_data(8,40)) == 0:
         print("ALARM2 AKA SHUTDOWN: NOT TRIGGERED")
+        shut_list = []
+        for i in range(32,37):
+            shut_list.append(bcd_to_int(bus.read_byte_data(8,i)))
+        sec,min,hour,days,weekday =  shut_list
+        print(datetime(year = year+2000, month = month, day=days,hour = hour,minute=min,second=sec))
+
     elif bcd_to_int(bus.read_byte_data(8,40)) == 1:
         print("ALARM2 AKA SHUTDOWN: TRIGGERED")
         print("Shutdown Time:\n")
