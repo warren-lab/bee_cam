@@ -57,6 +57,10 @@ with SMBus(1) as bus:
     ## The reason code for latest action
     latest_action = bus.read_byte_data(8,11)
     print("Input Voltage",latest_action)
+
+    # Grab the seconds from the WittyPi
+    print("Seconds ",bcd_to_int(bus.read_byte_data(8,58)))
+    print("Minutes ",bcd_to_int(bus.read_byte_data(8,59)))
     # Read RTC time from the WittyPi [IT IS ALREADY IN INT VALUES]
     time_list = []
     for i in range(58,65):
@@ -65,9 +69,10 @@ with SMBus(1) as bus:
     print(time_list)
     sec,min,hour,days,weekday,month,year= time_list
     # Python3 program for the above approach 
+    print("seconds",sec)
     print(datetime(year+2000,month,days,hour,min,sec))
     print("Weekday",weekday)
-    shutdown_time_min = 5 #minutes
+    shutdown_time_min = 2 #minutes
     min_shutdown= min +shutdown_time_min
     shutdown_time_list =[sec,min_shutdown,hour,days,weekday]
     # Okay Schedule the Next Shutdown to be in 5 minutes...
@@ -75,6 +80,7 @@ with SMBus(1) as bus:
     ## Set Hour of Alarm2 -> 34 INT TO BCD
     ## Set Day of Alarm2 -> 35 INT TO BCD
     # ## Set Day of Week of Alarm2 -> 36, INT TO BCD
+    print("Seconds?",sec)
     for count, val in enumerate(range(32,37)):
         # print(val, shutdown_time_list[count],BCDConversion(shutdown_time_list[count]))
         bus.write_byte_data(8,val,int_to_bcd(shutdown_time_list[count]))
