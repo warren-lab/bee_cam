@@ -1,9 +1,10 @@
 import sys
 import time
 from PIL import Image, ImageDraw, ImageFont
-import Adafruit_SSD1306
+import adafruit_ssd1306
 import socket
 import os
+import board
 
 class Display:
     """
@@ -15,12 +16,13 @@ class Display:
         self.font = ImageFont.load_default()
         self.enabled = True  # Initialize as True, will be set to False on error
         self.ip = self.get_ip_address()
-
+        i2c = board.I2C()
         try:
-            self.disp = Adafruit_SSD1306.SSD1306_128_64(rst=None, i2c_address=0x3C)
-            self.disp.begin()
-            self.disp.clear()
-            self.disp.display()
+            self._disp = adafruit_ssd1306.SSD1306_I2C(self.width,self.height, i2c)
+            # self.disp.begin()
+            self._disp.fill(0)
+            # self.disp.clear()
+            self._disp.show()
         except RuntimeError as e:
             print(f'Display: {e}', file=sys.stderr)
             self.enabled = False
@@ -42,10 +44,10 @@ class Display:
         draw.text((0, 1), current_time, font=self.font, fill=255)
 
         # Display the image
-        self.disp.image(image)
-        self.disp.display()
+        self._disp.image(image)
+        self._disp.show()
 
-    def display_msg(self, status, img_count):
+    def display_msg(self, status, img_count=1):
         if not self.enabled:
             return
 
@@ -66,17 +68,15 @@ class Display:
             draw.text((x, y), item, font=self.font, fill=255)
             y += 14
         
-
-        # Display the image
-        self.disp.image(image)
-        self.disp.display()    
+        self._disp.image(image)
+        self._disp.show()    
 
     def clear_display(self):
         if not self.enabled:
             return
         image = Image.new('1', (self.width, self.height))
-        self.disp.image(image)
-        self.disp.display()
+        self._disp.image(image)
+        self._disp.show()
 
 
     def get_ip_address(self):
