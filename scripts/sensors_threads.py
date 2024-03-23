@@ -5,6 +5,7 @@ import sys
 import time
 import socket
 import board
+import threading
 ## data
 from csv import DictWriter
 ## temperature data...
@@ -306,8 +307,7 @@ class Monitor(Sensor):
     def clear_display(self):
         if not self._enabled:
             return
-        image = Image.new('1', (self._width, self._height))
-        self.sensor_device.image(image)
+        self.sensor_device.fill(0)
         self.sensor_device.show()
 
 
@@ -377,6 +377,9 @@ class MultiSensor(Sensor):
         ### This could be placed in a different place...
         start_time= datetime.now().strftime('%Y%m%d_%H%M%S')
         self.filename = f'{path_sensors}/sensor_data_{start_time}.csv'# all data is written to this CSV...
+    
+    def get_monitor_sensor(self):
+        return self._disp
 
     def add_data(self,img_file,date_time):
         """
@@ -449,11 +452,7 @@ class MultiSensor(Sensor):
         time.sleep(sleep_duration)
 
     def clear_display(self):
-        if not self._enabled:
-            return
-        image = Image.new('1', (self._width, self._height))
-        self._disp.image(image)
-        self._disp.show()
+        self._disp.clear_display()
 
 """
 Right now there is a delay in the display since we 
@@ -465,36 +464,83 @@ Two options
     - What this script does it essentially embeds all the actions we perform for the MultiSensor in there...
     - It is important to note that what needs to happen is first an initialization of the MultiSensor class
     - Then after that we have the two functions...
+    - CURRENTLY:
+        - This is the method that will likely be utilized. With this method we have update on 
+        sensors every 2 seconds etc and the monitor updates are every second and we have even incorporated a delay 
+        which allows for less load ont he system.... So this will be really good we have the testing down...
 
-2. Use multiprocessing
+    - NEXT:
+        - Implement strict error handling and testing of the system and all sensors. Develop
+        a robust set of classes for handling errors
+        - Possible use some sort of decorator method and that is what will be used for display? 
+        Could just continue with current method
+        - Need to display the battery information and the IP address as well...
+
+
+
+
+2. Use multiprocessing (In future could try this but for now sticking with the two thread implementation that has 
+                        just now developed)
 
 """
+
+# MULTITHREADING
+def monitor_update():
+    
+    disp =  sensors.get_monitor_sensor()
+    while system_running:
+        time.sleep(.5)
+        msg = [f'Imaging status', 
+                time.strftime('%H:%M:%S'),
+                f'IP: {disp.get_ip_address()}']
+        disp.display_msg(msg)
+        current_second_fraction = time.time() % 1
+        sleep_duration = 1 - current_second_fraction
+        time.sleep(sleep_duration)
+
+def sensors_update():
+    global curr_time
+    while system_running:
+        time.sleep(2)
+        time_current_split = datetime.now().strftime('%Y%m%d%H%M%S')
+        name = 'bob'
+        img_name = str(name + '_' + time_current_split + '.jpg')
+        sensors.add_data(img_name,time_current_split )
+        if (time.time()-curr_time) >= 30:
+            curr_time = time.time()
+            sensors.append_to_csv()
+
+
+
 
 if __name__ == "__main__":
     """
     Testing Procedure for temperature sensor
     """
     print("Working")
-    
+    system_running =  True
     sensors = MultiSensor(path_sensors="/home/pi/data/")
     # Start timer
     start_time = time.time()
+    # develop two threads, one for sensors and one for images
+    sensors_thread = threading.Thread(target =sensors_update)
+    monitor_thread = threading.Thread(target=monitor_update)
 
+
+    
     try:
         curr_time = start_time
+        
+        sensors_thread.start()
+        monitor_thread.start()
+
         while True:
-            print("In Loop")
-            time.sleep(2)
-            time_current_split = datetime.now().strftime('%Y%m%d%H%M%S')
-            name = 'bob'
-            img_name = str(name + '_' + time_current_split + '.jpg')
-            sensors.add_data(img_name,time_current_split )
-            sensors.monitor_display()
-            if (time.time()-curr_time) >= 30:
-                curr_time = time.time()
-                sensors.append_to_csv()
-            
+            time.sleep(.1)
+
     except KeyboardInterrupt:
         print("Exiting")
+        system_running = False
+        sensors_thread.join()
+        monitor_thread.join()
         sensors.clear_display()
         sensors.display()

@@ -19,6 +19,8 @@ class Display:
         i2c = board.I2C()
         try:
             self._disp = adafruit_ssd1306.SSD1306_I2C(self.width,self.height, i2c)
+            self._disp.width = self.width
+            self._disp.height = self.height
             # self.disp.begin()
             self._disp.fill(0)
             # self.disp.clear()
